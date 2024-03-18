@@ -11,10 +11,10 @@ use embedded_hal_1::spi::ErrorKind;
 pub use enums::*;
 use stm32_metapac::octospi::vals::{MemType, PhaseMode, SizeInBits};
 
-use crate::dma::{slice_ptr_parts, word, Transfer};
+use crate::dma::{word, Transfer};
 use crate::gpio::sealed::{AFType, Pin as _};
 use crate::gpio::{AnyPin, Pull};
-use crate::pac::octospi::{regs, vals, Octospi as Regs};
+use crate::pac::octospi::{vals, Octospi as Regs};
 use crate::rcc::RccPeripheral;
 use crate::{peripherals, Peripheral};
 
@@ -507,7 +507,7 @@ impl<'d, T: Instance, Dma> Ospi<'d, T, Dma> {
         // Device configuration
         T::REGS.dcr1().modify(|w| {
             w.set_devsize(config.device_size.into());
-            w.set_mtyp(vals::MemType::from_bits(config.memory_type.into()));
+            w.set_mtyp(MemType::from_bits(config.memory_type.into()));
             w.set_csht(config.chip_select_high_time.into());
             w.set_dlybyp(config.delay_block_bypass);
             w.set_frck(false);
@@ -899,7 +899,7 @@ impl<'d, T: Instance, Dma> Ospi<'d, T, Dma> {
         // Device configuration
         T::REGS.dcr1().modify(|w| {
             w.set_devsize(config.device_size.into());
-            w.set_mtyp(vals::MemType::from_bits(config.memory_type.into()));
+            w.set_mtyp(MemType::from_bits(config.memory_type.into()));
             w.set_csht(config.chip_select_high_time.into());
             w.set_dlybyp(config.delay_block_bypass);
             w.set_frck(false);
