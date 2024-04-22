@@ -13,6 +13,11 @@ use crate::{pac::tsc::Tsc as Regs, rcc::RccPeripheral};
 use crate::{peripherals, Peripheral};
 use embassy_hal_internal::{into_ref, PeripheralRef};
 
+#[cfg(tsc_v1)]
+const TSC_NUM_GROUPS: u32 = 6;
+#[cfg(tsc_v2)]
+const TSC_NUM_GROUPS: u32 = 7;
+#[cfg(tsc_v3)]
 const TSC_NUM_GROUPS: u32 = 8;
 
 /// Error type defined for TSC
