@@ -52,6 +52,7 @@ pub enum State {
 /// For groups with multiple channel pins, may take longer because acquisitions
 /// are done sequentially. Check this status before pulling count for each
 /// sampled channel
+#[derive(PartialEq)]
 pub enum GroupStatus {
     /// Acquisition for channel still in progress
     Ongoing,
@@ -126,7 +127,7 @@ impl Default for Config {
             ct_pulse_high_length: ChargeTransferPulseCycle::_1,
             ct_pulse_low_length: ChargeTransferPulseCycle::_1,
             spread_spectrum: false,
-            spread_spectrum_deviation: SSDeviation::new(0).unwrap(),
+            spread_spectrum_deviation: SSDeviation::new(1).unwrap(),
             spread_spectrum_prescaler: false,
             pulse_generator_prescaler: PGPrescalerDivider::_1,
             max_count_value: MaxCount::_255,
@@ -169,14 +170,14 @@ pub struct PinGroup<'d, A> {
 /// TSC driver
 pub struct Tsc<'d, T: Instance> {
     _peri: PeripheralRef<'d, T>,
-    g1: Option<PinGroup<'d, AnyPin>>,
-    g2: Option<PinGroup<'d, AnyPin>>,
-    g3: Option<PinGroup<'d, AnyPin>>,
-    g4: Option<PinGroup<'d, AnyPin>>,
-    g5: Option<PinGroup<'d, AnyPin>>,
-    g6: Option<PinGroup<'d, AnyPin>>,
-    g7: Option<PinGroup<'d, AnyPin>>,
-    g8: Option<PinGroup<'d, AnyPin>>,
+    // _g1: Option<PinGroup<'d, AnyPin>>,
+    // _g2: Option<PinGroup<'d, AnyPin>>,
+    // _g3: Option<PinGroup<'d, AnyPin>>,
+    // _g4: Option<PinGroup<'d, AnyPin>>,
+    // _g5: Option<PinGroup<'d, AnyPin>>,
+    // _g6: Option<PinGroup<'d, AnyPin>>,
+    // _g7: Option<PinGroup<'d, AnyPin>>,
+    // _g8: Option<PinGroup<'d, AnyPin>>,
     state: State,
     config: Config,
 }
@@ -192,15 +193,15 @@ impl<'d, T: Instance> Tsc<'d, T> {
 
         // g2_d1: Option<impl Peripheral<P = impl G2IO1Pin<T>> + 'd>,
         // g2_d2: Option<impl Peripheral<P = impl G2IO2Pin<T>> + 'd>,
-        g2_d3: Option<PeriPin<impl Peripheral<P = impl G2IO3Pin<T>> + 'd>>,
-        g2_d4: Option<PeriPin<impl Peripheral<P = impl G2IO4Pin<T>> + 'd>>,
+        g2_d1: Option<PeriPin<impl Peripheral<P = impl G2IO1Pin<T>> + 'd>>,
+        g2_d2: Option<PeriPin<impl Peripheral<P = impl G2IO2Pin<T>> + 'd>>,
 
         // g3_d1: Option<impl Peripheral<P = impl G3IO1Pin<T>> + 'd>,
         // g3_d2: Option<impl Peripheral<P = impl G3IO2Pin<T>> + 'd>,
         // g3_d3: Option<impl Peripheral<P = impl G3IO3Pin<T>> + 'd>,
         // g3_d4: Option<impl Peripheral<P = impl G3IO4Pin<T>> + 'd>,
-        g4_d1: Option<PeriPin<impl Peripheral<P = impl G4IO1Pin<T>> + 'd>>,
-        g4_d2: Option<PeriPin<impl Peripheral<P = impl G4IO2Pin<T>> + 'd>>,
+        g7_d2: Option<PeriPin<impl Peripheral<P = impl G7IO2Pin<T>> + 'd>>,
+        g7_d3: Option<PeriPin<impl Peripheral<P = impl G7IO3Pin<T>> + 'd>>,
         // g4_d3: Option<impl Peripheral<P = impl G4IO3Pin<T>> + 'd>,
         // g4_d4: Option<impl Peripheral<P = impl G4IO4Pin<T>> + 'd>,
 
@@ -229,15 +230,17 @@ impl<'d, T: Instance> Tsc<'d, T> {
         let g1_d2_pin = g1_d2.pin;
         let g1_d3 = g1_d3.unwrap();
         let g1_d3_pin = g1_d3.pin;
-        let g2_d3 = g2_d3.unwrap();
-        let g2_d3_pin = g2_d3.pin;
-        let g2_d4 = g2_d4.unwrap();
-        let g2_d4_pin = g2_d4.pin;
-        let g4_d1 = g4_d1.unwrap();
-        let g4_d1_pin = g4_d1.pin;
-        let g4_d2 = g4_d2.unwrap();
-        let g4_d2_pin = g4_d2.pin;
-        into_ref!(peri, g1_d2_pin, g1_d3_pin, g2_d3_pin, g2_d4_pin, g4_d1_pin, g4_d2_pin);
+        let g2_d1 = g2_d1.unwrap();
+        let g2_d1_pin = g2_d1.pin;
+        let g2_d2 = g2_d2.unwrap();
+        let g2_d2_pin = g2_d2.pin;
+        let g7_d2 = g7_d2.unwrap();
+        let g7_d2_pin = g7_d2.pin;
+        let g7_d3 = g7_d3.unwrap();
+        let g7_d3_pin = g7_d3.pin;
+        into_ref!(peri, g1_d2_pin, g1_d3_pin, g2_d1_pin, g2_d2_pin, g7_d2_pin, g7_d3_pin);
+
+        let af_num = g1_d2_pin.af_num();
 
         // Configure pins
         match g1_d2.role {
@@ -263,54 +266,54 @@ impl<'d, T: Instance> Tsc<'d, T> {
             d4: None,
         };
 
-        match g2_d3.role {
-            PinType::Channel => g2_d3_pin.set_as_af_pull(g2_d3_pin.af_num(), AFType::OutputPushPull, Pull::None),
-            PinType::Sample => g2_d3_pin.set_as_af_pull(g2_d3_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
-            PinType::Shield => g2_d3_pin.set_as_af_pull(g2_d3_pin.af_num(), AFType::OutputPushPull, Pull::None),
+        match g2_d1.role {
+            PinType::Channel => g2_d1_pin.set_as_af_pull(g2_d1_pin.af_num(), AFType::OutputPushPull, Pull::None),
+            PinType::Sample => g2_d1_pin.set_as_af_pull(g2_d1_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
+            PinType::Shield => g2_d1_pin.set_as_af_pull(g2_d1_pin.af_num(), AFType::OutputPushPull, Pull::None),
         }
-        match g2_d4.role {
-            PinType::Channel => g2_d4_pin.set_as_af_pull(g2_d4_pin.af_num(), AFType::OutputPushPull, Pull::None),
-            PinType::Sample => g2_d4_pin.set_as_af_pull(g2_d4_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
-            PinType::Shield => g2_d4_pin.set_as_af_pull(g2_d4_pin.af_num(), AFType::OutputPushPull, Pull::None),
+        match g2_d2.role {
+            PinType::Channel => g2_d2_pin.set_as_af_pull(g2_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
+            PinType::Sample => g2_d2_pin.set_as_af_pull(g2_d2_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
+            PinType::Shield => g2_d2_pin.set_as_af_pull(g2_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
         }
         let g2 = PinGroup {
             d1: None,
             d2: None,
             d3: Some(TscPin {
-                pin: g2_d3_pin.map_into(),
-                role: g2_d3.role,
+                pin: g2_d1_pin.map_into(),
+                role: g2_d1.role,
             }),
             d4: Some(TscPin {
-                pin: g2_d4_pin.map_into(),
-                role: g2_d4.role,
+                pin: g2_d2_pin.map_into(),
+                role: g2_d2.role,
             }),
         };
 
-        match g4_d1.role {
-            PinType::Channel => g4_d1_pin.set_as_af_pull(g4_d1_pin.af_num(), AFType::OutputPushPull, Pull::None),
-            PinType::Sample => g4_d1_pin.set_as_af_pull(g4_d1_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
-            PinType::Shield => g4_d1_pin.set_as_af_pull(g4_d1_pin.af_num(), AFType::OutputPushPull, Pull::None),
+        match g7_d2.role {
+            PinType::Channel => g7_d2_pin.set_as_af_pull(g7_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
+            PinType::Sample => g7_d2_pin.set_as_af_pull(g7_d2_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
+            PinType::Shield => g7_d2_pin.set_as_af_pull(g7_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
         }
-        match g4_d2.role {
-            PinType::Channel => g4_d2_pin.set_as_af_pull(g4_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
-            PinType::Sample => g4_d2_pin.set_as_af_pull(g4_d2_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
-            PinType::Shield => g4_d2_pin.set_as_af_pull(g4_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
+        match g7_d3.role {
+            PinType::Channel => g7_d3_pin.set_as_af_pull(g7_d3_pin.af_num(), AFType::OutputPushPull, Pull::None),
+            PinType::Sample => g7_d3_pin.set_as_af_pull(g7_d3_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
+            PinType::Shield => g7_d3_pin.set_as_af_pull(g7_d3_pin.af_num(), AFType::OutputPushPull, Pull::None),
         }
-        let g4 = PinGroup {
+        let g7 = PinGroup {
             d1: Some(TscPin {
-                pin: g4_d1_pin.map_into(),
-                role: g4_d1.role,
+                pin: g7_d2_pin.map_into(),
+                role: g7_d2.role,
             }),
             d2: Some(TscPin {
-                pin: g4_d2_pin.map_into(),
-                role: g4_d2.role,
+                pin: g7_d3_pin.map_into(),
+                role: g7_d3.role,
             }),
             d3: None,
             d4: None,
         };
 
         // Need to check valid pin configuration input
-        Self::new_inner(peri, Some(g1), Some(g2), None, Some(g4), None, None, None, None, config)
+        Self::new_inner(peri, config)
     }
 
     // fn configure_pin<'b, G: Pin>(pin: PeripheralRef<'b, G>, role: PinType) {
@@ -334,14 +337,14 @@ impl<'d, T: Instance> Tsc<'d, T> {
 
     fn new_inner(
         peri: impl Peripheral<P = T> + 'd,
-        g1: Option<PinGroup<'d, AnyPin>>,
-        g2: Option<PinGroup<'d, AnyPin>>,
-        g3: Option<PinGroup<'d, AnyPin>>,
-        g4: Option<PinGroup<'d, AnyPin>>,
-        g5: Option<PinGroup<'d, AnyPin>>,
-        g6: Option<PinGroup<'d, AnyPin>>,
-        g7: Option<PinGroup<'d, AnyPin>>,
-        g8: Option<PinGroup<'d, AnyPin>>,
+        // g1: Option<PinGroup<'d, AnyPin>>,
+        // g2: Option<PinGroup<'d, AnyPin>>,
+        // g3: Option<PinGroup<'d, AnyPin>>,
+        // g4: Option<PinGroup<'d, AnyPin>>,
+        // g5: Option<PinGroup<'d, AnyPin>>,
+        // g6: Option<PinGroup<'d, AnyPin>>,
+        // g7: Option<PinGroup<'d, AnyPin>>,
+        // g8: Option<PinGroup<'d, AnyPin>>,
         config: Config,
     ) -> Self {
         into_ref!(peri);
@@ -378,7 +381,7 @@ impl<'d, T: Instance> Tsc<'d, T> {
         // Disable Schmitt trigger hysteresis on all used TSC IOs
         T::REGS
             .iohcr()
-            .write(|w| w.0 = config.channel_ios | config.shield_ios | config.sampling_ios);
+            .write(|w| w.0 = !(config.channel_ios | config.shield_ios | config.sampling_ios));
 
         // Set channel and shield IOs
         T::REGS.ioccr().write(|w| w.0 = config.channel_ios | config.shield_ios);
@@ -405,14 +408,14 @@ impl<'d, T: Instance> Tsc<'d, T> {
 
         Self {
             _peri: peri,
-            g1,
-            g2,
-            g3,
-            g4,
-            g5,
-            g6,
-            g7,
-            g8,
+            // _g1: g1,
+            // _g2: g2,
+            // _g3: g3,
+            // _g4: g4,
+            // _g5: g5,
+            // _g6: g6,
+            // _g7: g7,
+            // _g8: g8,
             state: State::Ready,
             config,
         }
