@@ -170,14 +170,14 @@ pub struct PinGroup<'d, A> {
 /// TSC driver
 pub struct Tsc<'d, T: Instance> {
     _peri: PeripheralRef<'d, T>,
-    // _g1: Option<PinGroup<'d, AnyPin>>,
-    // _g2: Option<PinGroup<'d, AnyPin>>,
-    // _g3: Option<PinGroup<'d, AnyPin>>,
-    // _g4: Option<PinGroup<'d, AnyPin>>,
-    // _g5: Option<PinGroup<'d, AnyPin>>,
-    // _g6: Option<PinGroup<'d, AnyPin>>,
-    // _g7: Option<PinGroup<'d, AnyPin>>,
-    // _g8: Option<PinGroup<'d, AnyPin>>,
+    _g1: Option<PinGroup<'d, AnyPin>>,
+    _g2: Option<PinGroup<'d, AnyPin>>,
+    _g3: Option<PinGroup<'d, AnyPin>>,
+    _g4: Option<PinGroup<'d, AnyPin>>,
+    _g5: Option<PinGroup<'d, AnyPin>>,
+    _g6: Option<PinGroup<'d, AnyPin>>,
+    _g7: Option<PinGroup<'d, AnyPin>>,
+    _g8: Option<PinGroup<'d, AnyPin>>,
     state: State,
     config: Config,
 }
@@ -313,7 +313,7 @@ impl<'d, T: Instance> Tsc<'d, T> {
         };
 
         // Need to check valid pin configuration input
-        Self::new_inner(peri, config)
+        Self::new_inner(peri, Some(g1), Some(g2), None, None, None, None, Some(g7), None, config)
     }
 
     // fn configure_pin<'b, G: Pin>(pin: PeripheralRef<'b, G>, role: PinType) {
@@ -337,14 +337,14 @@ impl<'d, T: Instance> Tsc<'d, T> {
 
     fn new_inner(
         peri: impl Peripheral<P = T> + 'd,
-        // g1: Option<PinGroup<'d, AnyPin>>,
-        // g2: Option<PinGroup<'d, AnyPin>>,
-        // g3: Option<PinGroup<'d, AnyPin>>,
-        // g4: Option<PinGroup<'d, AnyPin>>,
-        // g5: Option<PinGroup<'d, AnyPin>>,
-        // g6: Option<PinGroup<'d, AnyPin>>,
-        // g7: Option<PinGroup<'d, AnyPin>>,
-        // g8: Option<PinGroup<'d, AnyPin>>,
+        g1: Option<PinGroup<'d, AnyPin>>,
+        g2: Option<PinGroup<'d, AnyPin>>,
+        g3: Option<PinGroup<'d, AnyPin>>,
+        g4: Option<PinGroup<'d, AnyPin>>,
+        g5: Option<PinGroup<'d, AnyPin>>,
+        g6: Option<PinGroup<'d, AnyPin>>,
+        g7: Option<PinGroup<'d, AnyPin>>,
+        g8: Option<PinGroup<'d, AnyPin>>,
         config: Config,
     ) -> Self {
         into_ref!(peri);
@@ -408,14 +408,14 @@ impl<'d, T: Instance> Tsc<'d, T> {
 
         Self {
             _peri: peri,
-            // _g1: g1,
-            // _g2: g2,
-            // _g3: g3,
-            // _g4: g4,
-            // _g5: g5,
-            // _g6: g6,
-            // _g7: g7,
-            // _g8: g8,
+            _g1: g1,
+            _g2: g2,
+            _g3: g3,
+            _g4: g4,
+            _g5: g5,
+            _g6: g6,
+            _g7: g7,
+            _g8: g8,
             state: State::Ready,
             config,
         }
