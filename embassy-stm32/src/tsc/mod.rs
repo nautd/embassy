@@ -4,14 +4,16 @@
 
 /// Enums defined for peripheral parameters
 pub mod enums;
+
+use embassy_hal_internal::{into_ref, PeripheralRef};
 pub use enums::*;
 
 use core::marker::PhantomData;
 
 use crate::gpio::{low_level::AFType, AnyPin};
-use crate::{pac::tsc::Tsc as Regs, rcc::RccPeripheral};
+use crate::pac::tsc::Tsc as Regs;
+use crate::rcc::RccPeripheral;
 use crate::{peripherals, Peripheral};
-use embassy_hal_internal::{into_ref, PeripheralRef};
 
 #[cfg(tsc_v1)]
 const TSC_NUM_GROUPS: u32 = 6;
@@ -37,9 +39,6 @@ pub enum PinType {
     /// Shield pin connected to capacitive sensing shield
     Shield,
 }
-
-/// Unclear
-pub struct TscGroup {}
 
 /// Peripheral state
 #[derive(PartialEq, Clone, Copy)]
