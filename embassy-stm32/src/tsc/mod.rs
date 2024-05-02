@@ -5,7 +5,9 @@
 /// Enums defined for peripheral parameters
 pub mod enums;
 
-use crate::gpio::{low_level::AFType, AnyPin, Pull};
+use core::marker::PhantomData;
+
+use crate::gpio::{low_level::AFType, AnyPin};
 use crate::{pac::tsc::Tsc as Regs, rcc::RccPeripheral};
 use crate::{peripherals, Peripheral};
 use embassy_hal_internal::{into_ref, PeripheralRef};
@@ -144,40 +146,163 @@ impl Default for Config {
 
 /// Pin struct that maintains usage
 #[allow(missing_docs)]
-pub struct TscPin<'d, T> {
-    pin: PeripheralRef<'d, T>,
-    role: PinType,
-}
-
-/// Input structure for constructor containing peripherals
-#[allow(missing_docs)]
-pub struct PeriPin<T> {
-    pub pin: T,
-    pub role: PinType,
+pub struct TscPin<'d, T, C> {
+    _pin: PeripheralRef<'d, AnyPin>,
+    _role: PinType,
+    phantom: PhantomData<(T, C)>,
 }
 
 /// Pin group definition
 /// Pins are organized into groups of four IOs, all groups with a
 /// sampling channel must also have a sampling capacitor channel.
 #[allow(missing_docs)]
-pub struct PinGroup<'d, A> {
-    pub d1: Option<TscPin<'d, A>>,
-    pub d2: Option<TscPin<'d, A>>,
-    pub d3: Option<TscPin<'d, A>>,
-    pub d4: Option<TscPin<'d, A>>,
+#[derive(Default)]
+pub struct PinGroup<'d, T, C> {
+    d1: Option<TscPin<'d, T, C>>,
+    d2: Option<TscPin<'d, T, C>>,
+    d3: Option<TscPin<'d, T, C>>,
+    d4: Option<TscPin<'d, T, C>>,
 }
+
+impl<'d, T: Instance, C> PinGroup<'d, T, C> {
+    /// Create new sensing group
+    pub fn new() -> Self {
+        Self {
+            d1: None,
+            d2: None,
+            d3: None,
+            d4: None,
+        }
+    }
+}
+
+macro_rules! group_impl {
+    ($group:ident, $trait1:ident, $trait2:ident, $trait3:ident, $trait4:ident) => {
+        impl<'d, T: Instance> PinGroup<'d, T, $group> {
+            #[doc = concat!("Create a new pin1 for ", stringify!($group), " TSC group instance.")]
+            pub fn set_io1(&mut self, pin: impl Peripheral<P = impl $trait1<T>> + 'd, role: PinType) {
+                into_ref!(pin);
+                critical_section::with(|_| {
+                    pin.set_low();
+                    pin.set_as_af(
+                        pin.af_num(),
+                        match role {
+                            PinType::Channel => AFType::OutputPushPull,
+                            PinType::Sample => AFType::OutputOpenDrain,
+                            PinType::Shield => AFType::OutputPushPull,
+                        },
+                    );
+                    self.d1 = Some(TscPin {
+                        _pin: pin.map_into(),
+                        _role: role,
+                        phantom: PhantomData,
+                    })
+                })
+            }
+
+            #[doc = concat!("Create a new pin2 for ", stringify!($group), " TSC group instance.")]
+            pub fn set_io2(&mut self, pin: impl Peripheral<P = impl $trait2<T>> + 'd, role: PinType) {
+                into_ref!(pin);
+                critical_section::with(|_| {
+                    pin.set_low();
+                    pin.set_as_af(
+                        pin.af_num(),
+                        match role {
+                            PinType::Channel => AFType::OutputPushPull,
+                            PinType::Sample => AFType::OutputOpenDrain,
+                            PinType::Shield => AFType::OutputPushPull,
+                        },
+                    );
+                    self.d2 = Some(TscPin {
+                        _pin: pin.map_into(),
+                        _role: role,
+                        phantom: PhantomData,
+                    })
+                })
+            }
+
+            #[doc = concat!("Create a new pin3 for ", stringify!($group), " TSC group instance.")]
+            pub fn set_io3(&mut self, pin: impl Peripheral<P = impl $trait3<T>> + 'd, role: PinType) {
+                into_ref!(pin);
+                critical_section::with(|_| {
+                    pin.set_low();
+                    pin.set_as_af(
+                        pin.af_num(),
+                        match role {
+                            PinType::Channel => AFType::OutputPushPull,
+                            PinType::Sample => AFType::OutputOpenDrain,
+                            PinType::Shield => AFType::OutputPushPull,
+                        },
+                    );
+                    self.d3 = Some(TscPin {
+                        _pin: pin.map_into(),
+                        _role: role,
+                        phantom: PhantomData,
+                    })
+                })
+            }
+
+            #[doc = concat!("Create a new pin4 for ", stringify!($group), " TSC group instance.")]
+            pub fn set_io4(&mut self, pin: impl Peripheral<P = impl $trait4<T>> + 'd, role: PinType) {
+                into_ref!(pin);
+                critical_section::with(|_| {
+                    pin.set_low();
+                    pin.set_as_af(
+                        pin.af_num(),
+                        match role {
+                            PinType::Channel => AFType::OutputPushPull,
+                            PinType::Sample => AFType::OutputOpenDrain,
+                            PinType::Shield => AFType::OutputPushPull,
+                        },
+                    );
+                    self.d4 = Some(TscPin {
+                        _pin: pin.map_into(),
+                        _role: role,
+                        phantom: PhantomData,
+                    })
+                })
+            }
+        }
+    };
+}
+
+group_impl!(G1, G1IO1Pin, G1IO2Pin, G1IO3Pin, G1IO4Pin);
+group_impl!(G2, G2IO1Pin, G2IO2Pin, G2IO3Pin, G2IO4Pin);
+group_impl!(G3, G3IO1Pin, G3IO2Pin, G3IO3Pin, G3IO4Pin);
+group_impl!(G4, G4IO1Pin, G4IO2Pin, G4IO3Pin, G4IO4Pin);
+group_impl!(G5, G5IO1Pin, G5IO2Pin, G5IO3Pin, G5IO4Pin);
+group_impl!(G6, G6IO1Pin, G6IO2Pin, G6IO3Pin, G6IO4Pin);
+group_impl!(G7, G7IO1Pin, G7IO2Pin, G7IO3Pin, G7IO4Pin);
+group_impl!(G8, G8IO1Pin, G8IO2Pin, G8IO3Pin, G8IO4Pin);
+
+/// Group 1 marker type.
+pub enum G1 {}
+/// Group 2 marker type.
+pub enum G2 {}
+/// Group 3 marker type.
+pub enum G3 {}
+/// Group 4 marker type.
+pub enum G4 {}
+/// Group 5 marker type.
+pub enum G5 {}
+/// Group 6 marker type.
+pub enum G6 {}
+/// Group 7 marker type.
+pub enum G7 {}
+/// Group 8 marker type.
+pub enum G8 {}
 
 /// TSC driver
 pub struct Tsc<'d, T: Instance> {
     _peri: PeripheralRef<'d, T>,
-    _g1: Option<PinGroup<'d, AnyPin>>,
-    _g2: Option<PinGroup<'d, AnyPin>>,
-    _g3: Option<PinGroup<'d, AnyPin>>,
-    _g4: Option<PinGroup<'d, AnyPin>>,
-    _g5: Option<PinGroup<'d, AnyPin>>,
-    _g6: Option<PinGroup<'d, AnyPin>>,
-    _g7: Option<PinGroup<'d, AnyPin>>,
-    _g8: Option<PinGroup<'d, AnyPin>>,
+    _g1: Option<PinGroup<'d, T, G1>>,
+    _g2: Option<PinGroup<'d, T, G2>>,
+    _g3: Option<PinGroup<'d, T, G3>>,
+    _g4: Option<PinGroup<'d, T, G4>>,
+    _g5: Option<PinGroup<'d, T, G5>>,
+    _g6: Option<PinGroup<'d, T, G6>>,
+    _g7: Option<PinGroup<'d, T, G7>>,
+    _g8: Option<PinGroup<'d, T, G8>>,
     state: State,
     config: Config,
 }
@@ -186,143 +311,19 @@ impl<'d, T: Instance> Tsc<'d, T> {
     /// Create new TSC driver
     pub fn new(
         peri: impl Peripheral<P = T> + 'd,
-        // g1_d1: Option<PeriPin<impl Peripheral<P = impl G1IO1Pin<T>> + 'd>>,
-        g1_d2: Option<PeriPin<impl Peripheral<P = impl G1IO2Pin<T>> + 'd>>,
-        g1_d3: Option<PeriPin<impl Peripheral<P = impl G1IO3Pin<T>> + 'd>>,
-        // g1_d4: Option<PeriPin<impl Peripheral<P = impl G1IO4Pin<T>> + 'd>>,
-
-        // g2_d1: Option<impl Peripheral<P = impl G2IO1Pin<T>> + 'd>,
-        // g2_d2: Option<impl Peripheral<P = impl G2IO2Pin<T>> + 'd>,
-        g2_d1: Option<PeriPin<impl Peripheral<P = impl G2IO1Pin<T>> + 'd>>,
-        g2_d2: Option<PeriPin<impl Peripheral<P = impl G2IO2Pin<T>> + 'd>>,
-
-        // g3_d1: Option<impl Peripheral<P = impl G3IO1Pin<T>> + 'd>,
-        // g3_d2: Option<impl Peripheral<P = impl G3IO2Pin<T>> + 'd>,
-        // g3_d3: Option<impl Peripheral<P = impl G3IO3Pin<T>> + 'd>,
-        // g3_d4: Option<impl Peripheral<P = impl G3IO4Pin<T>> + 'd>,
-        g7_d2: Option<PeriPin<impl Peripheral<P = impl G7IO2Pin<T>> + 'd>>,
-        g7_d3: Option<PeriPin<impl Peripheral<P = impl G7IO3Pin<T>> + 'd>>,
-        // g4_d3: Option<impl Peripheral<P = impl G4IO3Pin<T>> + 'd>,
-        // g4_d4: Option<impl Peripheral<P = impl G4IO4Pin<T>> + 'd>,
-
-        // g5_d1: Option<impl Peripheral<P = impl G5IO1Pin<T>> + 'd>,
-        // g5_d2: Option<impl Peripheral<P = impl G5IO2Pin<T>> + 'd>,
-        // g5_d3: Option<impl Peripheral<P = impl G5IO3Pin<T>> + 'd>,
-        // g5_d4: Option<impl Peripheral<P = impl G5IO4Pin<T>> + 'd>,
-
-        // g6_d1: Option<impl Peripheral<P = impl G6IO1Pin<T>> + 'd>,
-        // g6_d2: Option<impl Peripheral<P = impl G6IO2Pin<T>> + 'd>,
-        // g6_d3: Option<impl Peripheral<P = impl G6IO3Pin<T>> + 'd>,
-        // g6_d4: Option<impl Peripheral<P = impl G6IO4Pin<T>> + 'd>,
-
-        // g7_d1: Option<impl Peripheral<P = impl G7IO1Pin<T>> + 'd>,
-        // g7_d2: Option<impl Peripheral<P = impl G7IO2Pin<T>> + 'd>,
-        // g7_d3: Option<impl Peripheral<P = impl G7IO3Pin<T>> + 'd>,
-        // g7_d4: Option<impl Peripheral<P = impl G7IO4Pin<T>> + 'd>,
-
-        // g8_d1: Option<impl Peripheral<P = impl G8IO1Pin<T>> + 'd>,
-        // g8_d2: Option<impl Peripheral<P = impl G8IO2Pin<T>> + 'd>,
-        // g8_d3: Option<impl Peripheral<P = impl G8IO3Pin<T>> + 'd>,
-        // g8_d4: Option<impl Peripheral<P = impl G8IO4Pin<T>> + 'd>,
+        g1: Option<PinGroup<'d, T, G1>>,
+        g2: Option<PinGroup<'d, T, G2>>,
+        g3: Option<PinGroup<'d, T, G3>>,
+        g4: Option<PinGroup<'d, T, G4>>,
+        g5: Option<PinGroup<'d, T, G5>>,
+        g6: Option<PinGroup<'d, T, G6>>,
+        g7: Option<PinGroup<'d, T, G7>>,
+        g8: Option<PinGroup<'d, T, G8>>,
         config: Config,
     ) -> Self {
-        let g1_d2 = g1_d2.unwrap();
-        let g1_d2_pin = g1_d2.pin;
-        let g1_d3 = g1_d3.unwrap();
-        let g1_d3_pin = g1_d3.pin;
-        let g2_d1 = g2_d1.unwrap();
-        let g2_d1_pin = g2_d1.pin;
-        let g2_d2 = g2_d2.unwrap();
-        let g2_d2_pin = g2_d2.pin;
-        let g7_d2 = g7_d2.unwrap();
-        let g7_d2_pin = g7_d2.pin;
-        let g7_d3 = g7_d3.unwrap();
-        let g7_d3_pin = g7_d3.pin;
-        into_ref!(peri, g1_d2_pin, g1_d3_pin, g2_d1_pin, g2_d2_pin, g7_d2_pin, g7_d3_pin);
-
-        let af_num = g1_d2_pin.af_num();
-
-        // Configure pins
-        match g1_d2.role {
-            PinType::Channel => g1_d2_pin.set_as_af_pull(g1_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
-            PinType::Sample => g1_d2_pin.set_as_af_pull(g1_d2_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
-            PinType::Shield => g1_d2_pin.set_as_af_pull(g1_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
-        }
-        match g1_d3.role {
-            PinType::Channel => g1_d3_pin.set_as_af_pull(g1_d3_pin.af_num(), AFType::OutputPushPull, Pull::None),
-            PinType::Sample => g1_d3_pin.set_as_af_pull(g1_d3_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
-            PinType::Shield => g1_d3_pin.set_as_af_pull(g1_d3_pin.af_num(), AFType::OutputPushPull, Pull::None),
-        }
-        let g1 = PinGroup {
-            d1: None,
-            d2: Some(TscPin {
-                pin: g1_d2_pin.map_into(),
-                role: g1_d2.role,
-            }),
-            d3: Some(TscPin {
-                pin: g1_d3_pin.map_into(),
-                role: g1_d3.role,
-            }),
-            d4: None,
-        };
-
-        match g2_d1.role {
-            PinType::Channel => g2_d1_pin.set_as_af_pull(g2_d1_pin.af_num(), AFType::OutputPushPull, Pull::None),
-            PinType::Sample => g2_d1_pin.set_as_af_pull(g2_d1_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
-            PinType::Shield => g2_d1_pin.set_as_af_pull(g2_d1_pin.af_num(), AFType::OutputPushPull, Pull::None),
-        }
-        match g2_d2.role {
-            PinType::Channel => g2_d2_pin.set_as_af_pull(g2_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
-            PinType::Sample => g2_d2_pin.set_as_af_pull(g2_d2_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
-            PinType::Shield => g2_d2_pin.set_as_af_pull(g2_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
-        }
-        let g2 = PinGroup {
-            d1: None,
-            d2: None,
-            d3: Some(TscPin {
-                pin: g2_d1_pin.map_into(),
-                role: g2_d1.role,
-            }),
-            d4: Some(TscPin {
-                pin: g2_d2_pin.map_into(),
-                role: g2_d2.role,
-            }),
-        };
-
-        match g7_d2.role {
-            PinType::Channel => g7_d2_pin.set_as_af_pull(g7_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
-            PinType::Sample => g7_d2_pin.set_as_af_pull(g7_d2_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
-            PinType::Shield => g7_d2_pin.set_as_af_pull(g7_d2_pin.af_num(), AFType::OutputPushPull, Pull::None),
-        }
-        match g7_d3.role {
-            PinType::Channel => g7_d3_pin.set_as_af_pull(g7_d3_pin.af_num(), AFType::OutputPushPull, Pull::None),
-            PinType::Sample => g7_d3_pin.set_as_af_pull(g7_d3_pin.af_num(), AFType::OutputOpenDrain, Pull::None),
-            PinType::Shield => g7_d3_pin.set_as_af_pull(g7_d3_pin.af_num(), AFType::OutputPushPull, Pull::None),
-        }
-        let g7 = PinGroup {
-            d1: Some(TscPin {
-                pin: g7_d2_pin.map_into(),
-                role: g7_d2.role,
-            }),
-            d2: Some(TscPin {
-                pin: g7_d3_pin.map_into(),
-                role: g7_d3.role,
-            }),
-            d3: None,
-            d4: None,
-        };
-
         // Need to check valid pin configuration input
-        Self::new_inner(peri, Some(g1), Some(g2), None, None, None, None, Some(g7), None, config)
+        Self::new_inner(peri, g1, g2, g3, g4, g5, g6, g7, g8, config)
     }
-
-    // fn configure_pin<'b, G: Pin>(pin: PeripheralRef<'b, G>, role: PinType) {
-    //     match role {
-    //         PinType::Channel => pin.set_as_af_pull(pin.af_num(), AFType::OutputPushPull, Pull::None),
-    //         PinType::Sample => {}
-    //         PinType::Shield => {}
-    //     }
-    // }
 
     // fn filter_group() -> Option<PinGroup<'d>> {}
     fn extract_groups(io_mask: u32) -> u32 {
@@ -337,14 +338,14 @@ impl<'d, T: Instance> Tsc<'d, T> {
 
     fn new_inner(
         peri: impl Peripheral<P = T> + 'd,
-        g1: Option<PinGroup<'d, AnyPin>>,
-        g2: Option<PinGroup<'d, AnyPin>>,
-        g3: Option<PinGroup<'d, AnyPin>>,
-        g4: Option<PinGroup<'d, AnyPin>>,
-        g5: Option<PinGroup<'d, AnyPin>>,
-        g6: Option<PinGroup<'d, AnyPin>>,
-        g7: Option<PinGroup<'d, AnyPin>>,
-        g8: Option<PinGroup<'d, AnyPin>>,
+        g1: Option<PinGroup<'d, T, G1>>,
+        g2: Option<PinGroup<'d, T, G2>>,
+        g3: Option<PinGroup<'d, T, G3>>,
+        g4: Option<PinGroup<'d, T, G4>>,
+        g5: Option<PinGroup<'d, T, G5>>,
+        g6: Option<PinGroup<'d, T, G6>>,
+        g7: Option<PinGroup<'d, T, G7>>,
+        g8: Option<PinGroup<'d, T, G8>>,
         config: Config,
     ) -> Self {
         into_ref!(peri);
