@@ -117,7 +117,8 @@ pub enum State {
 /// For groups with multiple channel pins, may take longer because acquisitions
 /// are done sequentially. Check this status before pulling count for each
 /// sampled channel
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum GroupStatus {
     /// Acquisition for channel still in progress
     Ongoing,
