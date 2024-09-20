@@ -528,7 +528,11 @@ fn blocking_flush(info: &Info) -> Result<(), Error> {
 
     // Enable Receiver after transmission complete for Half-Duplex mode
     if r.cr3().read().hdsel() {
-        r.cr1().modify(|reg| reg.set_re(true));
+        // r.cr1().modify(|reg| reg.set_re(true));
+        r.cr1().modify(|reg| {
+            reg.set_te(false);
+            reg.set_re(true);
+        });
     }
 
     Ok(())

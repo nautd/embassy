@@ -5,6 +5,7 @@ pub use crate::pac::rcc::vals::{
 };
 use crate::pac::rcc::vals::{Hseext, Msirgsel, Pllmboost, Pllrge};
 use crate::pac::{FLASH, PWR, RCC};
+use crate::rcc::LSI_FREQ;
 use crate::time::Hertz;
 
 /// HSI speed
@@ -296,7 +297,7 @@ pub(crate) unsafe fn init(config: Config) {
         audioclk: None,
         hsi48_div_2: None,
         lse: None,
-        lsi: None,
+        lsi: Some(LSI_FREQ),
         msik: None,
         shsi: None,
         shsi_div_2: None,
